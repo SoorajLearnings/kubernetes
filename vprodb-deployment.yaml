@@ -1,0 +1,45 @@
+apiVersion: apps/v1  # Corrected to apiVersion
+kind: Deployment
+metadata:
+  name: vprodb
+  labels:
+    app: vprodb
+spec:
+  selector:
+    matchLabels:  # Corrected 'matchlabels' to 'matchLabels'
+      app: vprodb
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: vprodb
+    spec:
+      containers:
+        - name: vprodb
+          image: soorajlearniings/vprofiledb
+          volumeMounts:
+            - mountPath: /var/lib/mysql
+              name: vpro-db-data
+          ports:
+            - name: vprodb-port
+              containerPort: 3306
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secret
+                  key: db-pass
+      nodeSelector:
+        zone: us-east-1a
+      volumes:  # Corrected 'volume' to 'volumes' (note the plural)
+        - name: vpro-db-data
+          awsElasticBlockStore:
+            volumeID: vol-08723d25c33f2f2b7
+            fsType: ext4
+      initContainers:
+        - name: busybox
+          image: busybox:latest
+          args: ["sh", "-c", "rm -rf /var/lib/mysql/lost+found"]  # Use 'sh -c' for shell command
+          volumeMounts:
+            - mountPath: /var/lib/mysql
+              name: vpro-db-data
